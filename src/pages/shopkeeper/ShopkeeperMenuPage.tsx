@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, UtensilsCrossed } from 'lucide-react';
-import { getFoodItemsByShop, createFoodItem, updateFoodItem, deleteFoodItem } from '../../services/shopService';
+import { getFoodItemsByShop, createFoodItem, updateFoodItem, deleteFoodItem, getShopByShopkeeper } from '../../services/shopService';
+import { useAuth } from '../../context/AuthContext';
 import type { FoodItem, Availability, FoodType } from '../../types';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -11,8 +12,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '../../components/ui/dialog';
 import { AvailabilityBadge, VegIndicator } from '../../components/common/Badges';
 import { EmptyState } from '../../components/common/EmptyState';
-
-const SHOP_ID = 's1';
 
 const emptyForm = {
   name: '',
@@ -26,17 +25,26 @@ const emptyForm = {
 };
 
 export function ShopkeeperMenuPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState<FoodItem[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [shopId, setShopId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadItems();
-  }, []);
+    if (!user) return;
+    getShopByShopkeeper(user.id).then((shop) => {
+      if (shop) {
+        setShopId(shop.id);
+        getFoodItemsByShop(shop.id).then(setItems);
+      }
+    });
+  }, [user]);
 
   function loadItems() {
-    getFoodItemsByShop(SHOP_ID).then(setItems);
+    if (!shopId) return;
+    getFoodItemsByShop(shopId).then(setItems);
   }
 
   function openAdd() {
@@ -61,11 +69,11 @@ export function ShopkeeperMenuPage() {
   }
 
   async function handleSave() {
-    if (!form.name || form.price <= 0) return;
+    if (!form.name || form.price <= 0 || !shopId) return;
     if (editingId) {
-      await updateFoodItem(editingId, { ...form, shopId: SHOP_ID });
+      await updateFoodItem(editingId, { ...form, shopId });
     } else {
-      await createFoodItem({ ...form, shopId: SHOP_ID });
+      await createFoodItem({ ...form, shopId });
     }
     setDialogOpen(false);
     loadItems();

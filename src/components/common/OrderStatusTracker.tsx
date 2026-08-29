@@ -10,7 +10,6 @@ interface OrderStatusTrackerProps {
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
   placed: 'Order Placed',
-  accepted: 'Order Accepted',
   preparing: 'Preparing',
   ready: 'Ready',
   completed: 'Completed',

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QrCode, Search, CheckCircle2, XCircle, User, ShoppingBag, Clock } from 'lucide-react';
-import { getAllOrders, updateOrderStatus } from '../../services/orderService';
+import { getOrdersByShop, updateOrderStatus } from '../../services/orderService';
+import { getShopByShopkeeper } from '../../services/shopService';
+import { useAuth } from '../../context/AuthContext';
 import type { Order } from '../../types';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -9,13 +11,25 @@ import { Label } from '../../components/ui/label';
 import { StatusBadge } from '../../components/common/Badges';
 
 export function ShopkeeperTokenPage() {
+  const { user } = useAuth();
   const [token, setToken] = useState('');
   const [result, setResult] = useState<Order | null | 'not_found'>(null);
+  const [shopOrders, setShopOrders] = useState<Order[]>([]);
+
+  useEffect(() => {
+    if (!user) return;
+    getShopByShopkeeper(user.id).then((shop) => {
+      if (shop) {
+        getOrdersByShop(shop.id).then(setShopOrders);
+      }
+    });
+  }, [user]);
 
   async function verifyToken() {
     if (!token.trim()) return;
-    const orders = await getAllOrders();
-    const order = orders.find((o) => o.id.toLowerCase() === token.trim().toLowerCase());
+    const order = shopOrders.find(
+      (o) => o.token.toLowerCase() === token.trim().toLowerCase()
+    );
     setResult(order ?? 'not_found');
   }
 
@@ -43,7 +57,7 @@ export function ShopkeeperTokenPage() {
                 id="token"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="e.g. VF102"
+                placeholder="e.g. FH-001"
                 className="pl-9"
                 onKeyDown={(e) => e.key === 'Enter' && verifyToken()}
               />
@@ -52,9 +66,6 @@ export function ShopkeeperTokenPage() {
               <QrCode className="h-4 w-4 mr-1" /> Verify
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Try tokens: VF101, VF102, VF103, VF104
-          </p>
         </div>
       </Card>
 
@@ -65,7 +76,7 @@ export function ShopkeeperTokenPage() {
             <XCircle className="h-7 w-7" />
           </div>
           <p className="font-semibold text-red-600">Invalid Token</p>
-          <p className="text-sm text-muted-foreground mt-1">No order found with token "{token}"</p>
+          <p className="text-sm text-muted-foreground mt-1">No order found with token "{token}" for your shop.</p>
         </Card>
       )}
 
@@ -84,7 +95,7 @@ export function ShopkeeperTokenPage() {
           <div className="space-y-3 text-sm">
             <div className="flex items-center justify-between border-b pb-2">
               <span className="text-muted-foreground">Order ID</span>
-              <span className="font-medium">#{result.id}</span>
+              <span className="font-medium">#{result.id.slice(0, 8)}</span>
             </div>
             <div className="flex items-center justify-between border-b pb-2">
               <span className="text-muted-foreground flex items-center gap-1"><User className="h-3 w-3" /> Customer</span>

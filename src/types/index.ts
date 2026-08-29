@@ -2,7 +2,6 @@ export type Role = 'student' | 'shopkeeper' | 'admin';
 
 export type OrderStatus =
   | 'placed'
-  | 'accepted'
   | 'preparing'
   | 'ready'
   | 'completed';

@@ -4,14 +4,12 @@ import {
   ClipboardList,
   Clock,
   CheckCircle2,
-  Package,
   AlertTriangle,
   UtensilsCrossed,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { getAllOrders } from '../../services/orderService';
-import { getFoodItemsByShop } from '../../services/shopService';
-import { mockShops } from '../../data/mockData';
+import { getOrdersByShop } from '../../services/orderService';
+import { getShopByShopkeeper, getFoodItemsByShop } from '../../services/shopService';
 import type { Order, FoodItem } from '../../types';
 import { StatCard } from '../../components/common/StatCard';
 import { Card } from '../../components/ui/card';
@@ -22,19 +20,24 @@ export function ShopkeeperDashboardPage() {
   const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [items, setItems] = useState<FoodItem[]>([]);
+  const [shopId, setShopId] = useState<string | null>(null);
 
   useEffect(() => {
-    // For demo, shopkeeper manages shop s1 (Sri's)
-    getAllOrders().then((o) => setOrders(o));
-    getFoodItemsByShop('s1').then(setItems);
-  }, []);
+    if (!user) return;
+    getShopByShopkeeper(user.id).then((shop) => {
+      if (shop) {
+        setShopId(shop.id);
+        getOrdersByShop(shop.id).then(setOrders);
+        getFoodItemsByShop(shop.id).then(setItems);
+      }
+    });
+  }, [user]);
 
-  const shopOrders = orders.filter((o) => o.shopId === 's1');
-  const todayOrders = shopOrders.length;
-  const pending = shopOrders.filter((o) => o.status === 'placed').length;
-  const preparing = shopOrders.filter((o) => o.status === 'preparing').length;
-  const ready = shopOrders.filter((o) => o.status === 'ready').length;
-  const completed = shopOrders.filter((o) => o.status === 'completed').length;
+  const todayOrders = orders.length;
+  const pending = orders.filter((o) => o.status === 'placed').length;
+  const preparing = orders.filter((o) => o.status === 'preparing').length;
+  const ready = orders.filter((o) => o.status === 'ready').length;
+  const completed = orders.filter((o) => o.status === 'completed').length;
   const lowStock = items.filter((i) => i.availability !== 'available').length;
 
   return (
@@ -63,14 +66,14 @@ export function ShopkeeperDashboardPage() {
             <Button variant="ghost" size="sm">View all</Button>
           </Link>
         </div>
-        {shopOrders.length === 0 ? (
+        {orders.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">No orders yet.</p>
         ) : (
           <div className="space-y-2">
-            {shopOrders.slice(0, 5).map((order) => (
+            {orders.slice(0, 5).map((order) => (
               <div key={order.id} className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0">
                 <div>
-                  <span className="font-medium text-sm">#{order.id}</span>
+                  <span className="font-medium text-sm">#{order.id.slice(0, 8)}</span>
                   <span className="text-xs text-muted-foreground ml-2">{order.userName}</span>
                 </div>
                 <div className="flex items-center gap-3">

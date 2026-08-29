@@ -18,7 +18,6 @@ export function CrowdBadge({ crowd }: { crowd: CrowdLevel }) {
 export function StatusBadge({ status }: { status: OrderStatus }) {
   const config: Record<OrderStatus, { label: string; className: string }> = {
     placed: { label: 'Placed', className: 'bg-blue-100 text-blue-700' },
-    accepted: { label: 'Accepted', className: 'bg-indigo-100 text-indigo-700' },
     preparing: { label: 'Preparing', className: 'bg-yellow-100 text-yellow-700' },
     ready: { label: 'Ready', className: 'bg-green-100 text-green-700' },
     completed: { label: 'Completed', className: 'bg-gray-200 text-gray-700' },

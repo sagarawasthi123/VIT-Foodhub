@@ -28,7 +28,7 @@ export function OrderHistoryPage() {
   }
 
   const active = orders.filter((o) =>
-    ['placed', 'accepted', 'preparing', 'ready'].includes(o.status)
+    ['placed', 'preparing', 'ready'].includes(o.status)
   );
   const past = orders.filter((o) => o.status === 'completed');
 

@@ -3,55 +3,27 @@ import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Clock, Store, Hash } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { getOrderById, ORDER_FLOW } from '../../services/orderService';
-import { mockReviews } from '../../data/mockData';
-import type { Order, Review } from '../../types';
+import type { Order } from '../../types';
 import { OrderStatusTracker } from '../../components/common/OrderStatusTracker';
 import { StatusBadge } from '../../components/common/Badges';
-import { RatingStars } from '../../components/common/RatingStars';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
-import { Textarea } from '../../components/ui/textarea';
 
 export function OrderTrackingPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const [order, setOrder] = useState<Order | null>(null);
-  const [rating, setRating] = useState(0);
-  const [feedback, setFeedback] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [existingReview, setExistingReview] = useState<Review | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
     getOrderById(id).then((o) => {
       setOrder(o ?? null);
-      const review = mockReviews.find((r) => r.orderId === id);
-      if (review) {
-        setExistingReview(review);
-        setRating(review.rating);
-        setFeedback(review.feedback);
-        setSubmitted(true);
-      }
+      setLoading(false);
     });
   }, [id]);
 
-  function handleSubmitReview() {
-    if (!order || !user || rating === 0) return;
-    const review: Review = {
-      id: `r${Date.now()}`,
-      orderId: order.id,
-      userId: user.id,
-      userName: user.name,
-      rating,
-      feedback,
-      createdAt: new Date().toISOString(),
-    };
-    mockReviews.push(review);
-    setExistingReview(review);
-    setSubmitted(true);
-  }
-
-  if (!order) return <div className="p-4">Loading...</div>;
+  if (loading) return <div className="p-4">Loading...</div>;
+  if (!order) return <div className="p-4">Order not found.</div>;
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -70,11 +42,11 @@ export function OrderTrackingPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground flex items-center gap-1"><Hash className="h-3 w-3" /> Order ID</p>
-            <p className="font-medium">#{order.id}</p>
+            <p className="font-medium">#{order.id.slice(0, 8)}</p>
           </div>
           <div>
             <p className="text-muted-foreground flex items-center gap-1"><Store className="h-3 w-3" /> Shop</p>
-            <p className="font-medium">{order.shopName}</p>
+            <p className="font-medium">{order.shopName || 'Shop'}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Token</p>
@@ -113,6 +85,23 @@ export function OrderTrackingPage() {
         </div>
       </Card>
 
+      {/* Payment info */}
+      <Card className="p-5">
+        <h2 className="font-semibold mb-3">Payment</h2>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-muted-foreground">Method</p>
+            <p className="font-medium uppercase">{order.paymentMethod}</p>
+          </div>
+          <div>
+            <p className="text-muted-foreground">Status</p>
+            <p className={`font-medium capitalize ${order.paymentStatus === 'paid' ? 'text-green-600' : 'text-orange-600'}`}>
+              {order.paymentStatus}
+            </p>
+          </div>
+        </div>
+      </Card>
+
       {/* Smart Queue info */}
       <Card className="p-5">
         <h2 className="font-semibold mb-3">Smart Queue</h2>
@@ -131,40 +120,6 @@ export function OrderTrackingPage() {
           </div>
         </div>
       </Card>
-
-      {/* Rating & Feedback */}
-      {order.status === 'completed' && (
-        <Card className="p-5">
-          <h2 className="font-semibold mb-3">Rate Your Experience</h2>
-          {submitted ? (
-            <div className="text-center py-4">
-              <p className="text-green-600 font-medium">Thank you for your feedback!</p>
-              <div className="mt-3 flex justify-center">
-                <RatingStars rating={rating} size={24} />
-              </div>
-              {feedback && <p className="mt-2 text-sm text-muted-foreground">"{feedback}"</p>}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">How was your order?</p>
-                <RatingStars rating={rating} size={28} interactive onChange={setRating} />
-              </div>
-              <div>
-                <Textarea
-                  placeholder="Share your feedback..."
-                  value={feedback}
-                  onChange={(e) => setFeedback(e.target.value)}
-                  rows={3}
-                />
-              </div>
-              <Button onClick={handleSubmitReview} disabled={rating === 0}>
-                Submit Feedback
-              </Button>
-            </div>
-          )}
-        </Card>
-      )}
     </div>
   );
 }

@@ -121,6 +121,7 @@ export function LoginPage() {
       </div>
       <p className="mt-3 text-center text-xs text-muted-foreground">
         Demo password for all accounts: <span className="font-mono font-medium">password</span>
+        <br />Demo accounts must be created in Supabase Auth first.
       </p>
     </div>
   );

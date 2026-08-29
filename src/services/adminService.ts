@@ -1,132 +1,225 @@
-import type {
-  User,
-  FoodCourt,
-  Shop,
-  Role,
-} from '../types';
-import {
-  mockUsers,
-  mockFoodCourts,
-  mockShops,
-  mockOrders,
-} from '../data/mockData';
+import { supabase } from '../lib/supabase';
+import type { User, FoodCourt, Shop, Role } from '../types';
 
 export async function getAllUsers(): Promise<User[]> {
-  await delay();
-  return [...mockUsers];
+  const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((d) => ({
+    id: d.id,
+    name: d.name,
+    email: d.email,
+    regNo: d.reg_no,
+    role: d.role as Role,
+    status: d.status,
+    createdAt: d.created_at,
+  }));
 }
 
-export async function updateUserRole(
-  id: string,
-  role: Role
-): Promise<User> {
-  await delay();
-  const user = mockUsers.find((u) => u.id === id);
-  if (!user) throw new Error('User not found');
-  user.role = role;
-  return user;
+export async function updateUserRole(id: string, role: Role): Promise<User> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role })
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('User not found');
+  return {
+    id: data.id,
+    name: data.name,
+    email: data.email,
+    regNo: data.reg_no,
+    role: data.role as Role,
+    status: data.status,
+    createdAt: data.created_at,
+  };
 }
 
 export async function getAllFoodCourtsAdmin(): Promise<FoodCourt[]> {
-  await delay();
-  return [...mockFoodCourts];
+  const { data, error } = await supabase.from('food_courts').select('*').order('name');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((d) => ({
+    id: d.id,
+    name: d.name,
+    location: d.location,
+    description: d.description ?? '',
+    status: d.status ?? 'open',
+    shopCount: 0,
+    crowd: d.crowd ?? 'low',
+  }));
 }
 
 export async function createFoodCourt(
   data: Omit<FoodCourt, 'id' | 'shopCount'>
 ): Promise<FoodCourt> {
-  await delay();
-  const fc: FoodCourt = {
-    ...data,
-    id: `fc${mockFoodCourts.length + 1}`,
+  const { data: row, error } = await supabase
+    .from('food_courts')
+    .insert({
+      name: data.name,
+      location: data.location,
+      description: data.description,
+      status: data.status,
+      crowd: data.crowd,
+    })
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) throw new Error('Failed to create food court');
+  return {
+    id: row.id,
+    name: row.name,
+    location: row.location,
+    description: row.description ?? '',
+    status: row.status ?? 'open',
     shopCount: 0,
-  crowd: data.crowd ?? 'low',
-  status: data.status ?? 'open',
-  description: data.description ?? '',
-  location: data.location ?? '',
-    name: data.name,
+    crowd: row.crowd ?? 'low',
   };
-  mockFoodCourts.push(fc);
-  return fc;
 }
 
 export async function updateFoodCourt(
   id: string,
   updates: Partial<FoodCourt>
 ): Promise<FoodCourt> {
-  await delay();
-  const fc = mockFoodCourts.find((f) => f.id === id);
-  if (!fc) throw new Error('Food court not found');
-  Object.assign(fc, updates);
-  return fc;
+  const dbUpdates: Record<string, unknown> = {};
+  if (updates.name !== undefined) dbUpdates.name = updates.name;
+  if (updates.location !== undefined) dbUpdates.location = updates.location;
+  if (updates.description !== undefined) dbUpdates.description = updates.description;
+  if (updates.status !== undefined) dbUpdates.status = updates.status;
+  if (updates.crowd !== undefined) dbUpdates.crowd = updates.crowd;
+
+  const { data, error } = await supabase
+    .from('food_courts')
+    .update(dbUpdates)
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Food court not found');
+  return {
+    id: data.id,
+    name: data.name,
+    location: data.location,
+    description: data.description ?? '',
+    status: data.status ?? 'open',
+    shopCount: 0,
+    crowd: data.crowd ?? 'low',
+  };
 }
 
 export async function deleteFoodCourt(id: string): Promise<void> {
-  await delay();
-  const idx = mockFoodCourts.findIndex((f) => f.id === id);
-  if (idx >= 0) mockFoodCourts.splice(idx, 1);
+  const { error } = await supabase.from('food_courts').delete().eq('id', id);
+  if (error) throw new Error(error.message);
 }
 
 export async function getAllShopsAdmin(): Promise<Shop[]> {
-  await delay();
-  return [...mockShops];
+  const { data, error } = await supabase.from('shops').select('*').order('name');
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((d) => ({
+    id: d.id,
+    name: d.name,
+    foodCourtId: d.food_court_id,
+    category: d.category ?? '',
+    contact: d.contact ?? '',
+    status: d.status ?? 'open',
+    crowd: d.crowd ?? 'low',
+    rating: Number(d.rating) ?? 0,
+    image: d.image ?? '',
+  }));
 }
 
 export async function createShop(data: Omit<Shop, 'id'>): Promise<Shop> {
-  await delay();
-  const shop: Shop = {
-    ...data,
-    id: `s${mockShops.length + 1}`,
-    crowd: data.crowd ?? 'low',
-    status: data.status ?? 'open',
-    rating: data.rating ?? 0,
-    image: data.image ?? '',
-    name: data.name,
-    foodCourtId: data.foodCourtId,
-    category: data.category,
-    contact: data.contact,
+  const { data: row, error } = await supabase
+    .from('shops')
+    .insert({
+      food_court_id: data.foodCourtId,
+      shopkeeper_id: null,
+      name: data.name,
+      category: data.category,
+      contact: data.contact,
+      status: data.status,
+      crowd: data.crowd,
+      rating: data.rating,
+      image: data.image,
+    })
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) throw new Error('Failed to create shop');
+  return {
+    id: row.id,
+    name: row.name,
+    foodCourtId: row.food_court_id,
+    category: row.category ?? '',
+    contact: row.contact ?? '',
+    status: row.status ?? 'open',
+    crowd: row.crowd ?? 'low',
+    rating: Number(row.rating) ?? 0,
+    image: row.image ?? '',
   };
-  mockShops.push(shop);
-  return shop;
 }
 
 export async function updateShop(
   id: string,
   updates: Partial<Shop>
 ): Promise<Shop> {
-  await delay();
-  const shop = mockShops.find((s) => s.id === id);
-  if (!shop) throw new Error('Shop not found');
-  Object.assign(shop, updates);
-  return shop;
-}
+  const dbUpdates: Record<string, unknown> = {};
+  if (updates.name !== undefined) dbUpdates.name = updates.name;
+  if (updates.foodCourtId !== undefined) dbUpdates.food_court_id = updates.foodCourtId;
+  if (updates.category !== undefined) dbUpdates.category = updates.category;
+  if (updates.contact !== undefined) dbUpdates.contact = updates.contact;
+  if (updates.status !== undefined) dbUpdates.status = updates.status;
+  if (updates.crowd !== undefined) dbUpdates.crowd = updates.crowd;
+  if (updates.rating !== undefined) dbUpdates.rating = updates.rating;
+  if (updates.image !== undefined) dbUpdates.image = updates.image;
 
-export async function deleteShop(id: string): Promise<void> {
-  await delay();
-  const idx = mockShops.findIndex((s) => s.id === id);
-  if (idx >= 0) mockShops.splice(idx, 1);
-}
-
-export async function getAdminStats() {
-  await delay();
-  const todayOrders = mockOrders.filter((o) =>
-    o.createdAt.startsWith(new Date().toISOString().slice(0, 10))
-  );
+  const { data, error } = await supabase
+    .from('shops')
+    .update(dbUpdates)
+    .eq('id', id)
+    .select()
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error('Shop not found');
   return {
-    totalStudents: mockUsers.filter((u) => u.role === 'student').length,
-    totalShops: mockShops.length,
-    totalFoodCourts: mockFoodCourts.length,
-    todayOrders: todayOrders.length || mockOrders.length,
-    completedOrders: mockOrders.filter((o) => o.status === 'completed').length,
-    revenue: mockOrders
-      .filter((o) => o.paymentStatus === 'paid')
-      .reduce((sum, o) => sum + o.totalAmount, 0),
-    activeOrders: mockOrders.filter((o) =>
-      ['placed', 'accepted', 'preparing', 'ready'].includes(o.status)
-    ).length,
+    id: data.id,
+    name: data.name,
+    foodCourtId: data.food_court_id,
+    category: data.category ?? '',
+    contact: data.contact ?? '',
+    status: data.status ?? 'open',
+    crowd: data.crowd ?? 'low',
+    rating: Number(data.rating) ?? 0,
+    image: data.image ?? '',
   };
 }
 
-function delay(ms = 300) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+export async function deleteShop(id: string): Promise<void> {
+  const { error } = await supabase.from('shops').delete().eq('id', id);
+  if (error) throw new Error(error.message);
+}
+
+export async function getAdminStats() {
+  const [users, shops, foodCourts, orders] = await Promise.all([
+    supabase.from('profiles').select('*'),
+    supabase.from('shops').select('*'),
+    supabase.from('food_courts').select('*'),
+    supabase.from('orders').select('*'),
+  ]);
+
+  const allUsers = users.data ?? [];
+  const allOrders = orders.data ?? [];
+
+  return {
+    totalStudents: allUsers.filter((u: Record<string, unknown>) => u.role === 'student').length,
+    totalShops: (shops.data ?? []).length,
+    totalFoodCourts: (foodCourts.data ?? []).length,
+    todayOrders: allOrders.length,
+    completedOrders: allOrders.filter((o: Record<string, unknown>) => o.order_status === 'COMPLETED').length,
+    revenue: allOrders
+      .filter((o: Record<string, unknown>) => o.payment_status === 'SUCCESS')
+      .reduce((sum: number, o: Record<string, unknown>) => sum + Number(o.total_amount), 0),
+    activeOrders: allOrders.filter((o: Record<string, unknown>) =>
+      ['PLACED', 'PREPARING', 'READY'].includes(o.order_status as string)
+    ).length,
+  };
 }

@@ -1,4 +1,5 @@
 import type { Payment } from '../types';
+import { updatePaymentStatus } from './orderService';
 
 export async function processPayment(data: {
   orderId: string;
@@ -6,6 +7,9 @@ export async function processPayment(data: {
   amount: number;
 }): Promise<Payment> {
   await delay(1200);
+
+  await updatePaymentStatus(data.orderId, 'SUCCESS');
+
   const payment: Payment = {
     id: `pay_${data.orderId}`,
     orderId: data.orderId,

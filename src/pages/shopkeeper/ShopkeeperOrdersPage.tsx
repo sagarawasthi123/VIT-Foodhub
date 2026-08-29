@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, ClipboardList } from 'lucide-react';
-import { getAllOrders, updateOrderStatus, ORDER_FLOW } from '../../services/orderService';
+import { getOrdersByShop, updateOrderStatus, ORDER_FLOW } from '../../services/orderService';
+import { getShopByShopkeeper } from '../../services/shopService';
+import { useAuth } from '../../context/AuthContext';
 import type { Order, OrderStatus } from '../../types';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -8,15 +10,24 @@ import { StatusBadge } from '../../components/common/Badges';
 import { EmptyState } from '../../components/common/EmptyState';
 
 export function ShopkeeperOrdersPage() {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [filter, setFilter] = useState<OrderStatus | 'all'>('all');
+  const [shopId, setShopId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadOrders();
-  }, []);
+    if (!user) return;
+    getShopByShopkeeper(user.id).then((shop) => {
+      if (shop) {
+        setShopId(shop.id);
+        getOrdersByShop(shop.id).then(setOrders);
+      }
+    });
+  }, [user]);
 
-  function loadOrders() {
-    getAllOrders().then(setOrders);
+  async function loadOrders() {
+    if (!shopId) return;
+    getOrdersByShop(shopId).then(setOrders);
   }
 
   async function advanceStatus(order: Order) {
@@ -27,13 +38,12 @@ export function ShopkeeperOrdersPage() {
     }
   }
 
-  const shopOrders = orders.filter((o) => o.shopId === 's1');
+  const shopOrders = orders;
   const filtered = filter === 'all' ? shopOrders : shopOrders.filter((o) => o.status === filter);
 
   const counts: Record<string, number> = {
     all: shopOrders.length,
     placed: shopOrders.filter((o) => o.status === 'placed').length,
-    accepted: shopOrders.filter((o) => o.status === 'accepted').length,
     preparing: shopOrders.filter((o) => o.status === 'preparing').length,
     ready: shopOrders.filter((o) => o.status === 'ready').length,
     completed: shopOrders.filter((o) => o.status === 'completed').length,
@@ -72,7 +82,7 @@ export function ShopkeeperOrdersPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-bold text-primary">#{order.id}</span>
+                      <span className="font-bold text-primary">#{order.id.slice(0, 8)}</span>
                       <span className="text-sm font-medium">Token: {order.token}</span>
                       <StatusBadge status={order.status} />
                     </div>

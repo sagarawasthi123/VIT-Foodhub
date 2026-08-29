@@ -16,7 +16,7 @@ export function OrderCard({ order, to, action }: OrderCardProps) {
       <div className="flex items-start justify-between gap-2">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-bold text-primary">#{order.id}</span>
+            <span className="font-bold text-primary">#{order.id.slice(0, 8)}</span>
             <StatusBadge status={order.status} />
           </div>
           <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">

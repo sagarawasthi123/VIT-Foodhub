@@ -7,6 +7,7 @@ import {
 } from 'react';
 import type { User, Role } from '../types';
 import * as authService from '../services/authService';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextValue {
   user: User | null;
@@ -25,27 +26,47 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = 'vit-foodhub-user';
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setUser(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) {
+        (async () => {
+          try {
+            const profile = await authService.fetchProfile(data.session.user.id);
+            setUser(profile);
+          } catch {
+            setUser(null);
+          } finally {
+            setLoading(false);
+          }
+        })();
+      } else {
+        setLoading(false);
       }
-    }
-  }, []);
+    });
 
-  function persist(u: User) {
-    setUser(u);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(u));
-  }
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session?.user) {
+        setUser(null);
+        return;
+      }
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        (async () => {
+          try {
+            const profile = await authService.fetchProfile(session.user.id);
+            setUser(profile);
+          } catch {
+            setUser(null);
+          }
+        })();
+      }
+    });
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
 
   const value: AuthContextValue = {
     user,
@@ -54,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const u = await authService.login(email, password);
-        persist(u);
+        setUser(u);
         return u;
       } finally {
         setLoading(false);
@@ -64,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const u = await authService.loginByRole(role);
-        persist(u);
+        setUser(u);
         return u;
       } finally {
         setLoading(false);
@@ -74,7 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       try {
         const u = await authService.register(data);
-        persist(u);
+        setUser(u);
         return u;
       } finally {
         setLoading(false);
@@ -84,8 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authService.requestPasswordReset(email);
     },
     logout() {
-      setUser(null);
-      localStorage.removeItem(STORAGE_KEY);
+      (async () => {
+        await supabase.auth.signOut();
+        setUser(null);
+      })();
     },
   };
 

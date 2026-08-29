@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Boxes, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { getFoodItemsByShop, updateFoodItem } from '../../services/shopService';
+import { getFoodItemsByShop, updateFoodItem, getShopByShopkeeper } from '../../services/shopService';
+import { useAuth } from '../../context/AuthContext';
 import type { FoodItem, Availability } from '../../types';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
@@ -8,17 +9,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { AvailabilityBadge, VegIndicator } from '../../components/common/Badges';
 import { EmptyState } from '../../components/common/EmptyState';
 
-const SHOP_ID = 's1';
-
 export function ShopkeeperInventoryPage() {
+  const { user } = useAuth();
   const [items, setItems] = useState<FoodItem[]>([]);
+  const [shopId, setShopId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadItems();
-  }, []);
+    if (!user) return;
+    getShopByShopkeeper(user.id).then((shop) => {
+      if (shop) {
+        setShopId(shop.id);
+        getFoodItemsByShop(shop.id).then(setItems);
+      }
+    });
+  }, [user]);
 
   function loadItems() {
-    getFoodItemsByShop(SHOP_ID).then(setItems);
+    if (!shopId) return;
+    getFoodItemsByShop(shopId).then(setItems);
   }
 
   async function changeAvailability(item: FoodItem, availability: Availability) {

@@ -41,7 +41,7 @@ export function OrderConfirmationPage() {
     const receipt = `
 VIT FoodHub - Payment Receipt
 ============================
-Order ID: ${order!.id}
+Order ID: ${order!.id.slice(0, 8)}
 Token: ${order!.token}
 Shop: ${order!.shopName}
 Payment Method: ${order!.paymentMethod.toUpperCase()}
@@ -90,7 +90,7 @@ Thank you for using VIT FoodHub!
         <div className="grid grid-cols-2 gap-4 text-sm">
           <div>
             <p className="text-muted-foreground">Order ID</p>
-            <p className="font-medium">#{order.id}</p>
+            <p className="font-medium">#{order.id.slice(0, 8)}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Shop</p>
