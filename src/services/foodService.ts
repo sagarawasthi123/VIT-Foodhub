@@ -2,10 +2,14 @@ import { supabase } from '../lib/supabase';
 import type { FoodCourt, Shop, FoodItem } from '../types';
 
 export async function getFoodCourts(): Promise<FoodCourt[]> {
-  const { data, error } = await supabase.from('food_courts').select('*').order('name');
+  const { data, error } = await supabase
+    .from('food_courts')
+    .select('*, shops(id)')
+    .order('name');
   if (error) throw new Error(error.message);
   return (data ?? []).map(mapFoodCourt);
 }
+
 
 export async function getFoodCourt(id: string): Promise<FoodCourt | undefined> {
   const { data, error } = await supabase
@@ -65,16 +69,18 @@ export async function searchFoodItems(query: string): Promise<FoodItem[]> {
 }
 
 function mapFoodCourt(d: Record<string, unknown>): FoodCourt {
+  const shops = d.shops as unknown[] | null;
   return {
     id: d.id as string,
     name: d.name as string,
     location: d.location as string,
     description: (d.description as string) ?? '',
     status: (d.status as 'open' | 'closed') ?? 'open',
-    shopCount: 0,
+    shopCount: Array.isArray(shops) ? shops.length : 0,
     crowd: (d.crowd as 'low' | 'moderate' | 'busy') ?? 'low',
   };
 }
+
 
 function mapShop(d: Record<string, unknown>): Shop {
   return {

@@ -93,36 +93,6 @@ export function LoginPage() {
           Register
         </Link>
       </p>
-
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-muted/30 px-2 text-muted-foreground">or try a demo account</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        {DEMO_ACCOUNTS.map((acc) => (
-          <button
-            key={acc.role}
-            onClick={() => handleDemoLogin(acc.role)}
-            disabled={loading}
-            className={cn(
-              'flex flex-col items-center gap-1.5 rounded-xl border p-3 text-xs font-medium transition-all hover:border-primary hover:bg-primary/5',
-              selectedRole === acc.role && 'border-primary bg-primary/5'
-            )}
-          >
-            {acc.icon}
-            {acc.label}
-          </button>
-        ))}
-      </div>
-      <p className="mt-3 text-center text-xs text-muted-foreground">
-        Demo password for all accounts: <span className="font-mono font-medium">password</span>
-        <br />Demo accounts must be created in Supabase Auth first.
-      </p>
     </div>
   );
 }

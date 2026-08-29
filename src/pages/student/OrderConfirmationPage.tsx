@@ -12,7 +12,7 @@ export function OrderConfirmationPage() {
   const navigate = useNavigate();
   const orderId = (location.state as { orderId?: string })?.orderId;
   const [order, setOrder] = useState<Order | null>(null);
-  const [showQR, setShowQR] = useState(false);
+  const [showQR, setShowQR] = useState(true);
 
   useEffect(() => {
     if (!orderId) return;
@@ -30,12 +30,7 @@ export function OrderConfirmationPage() {
 
   if (!order) return <div className="p-4">Loading...</div>;
 
-  const qrValue = JSON.stringify({
-    orderId: order.id,
-    token: order.token,
-    shop: order.shopName,
-    amount: order.totalAmount,
-  });
+  const qrValue = JSON.stringify({ orderId: order.id });
 
   function handleDownload() {
     const receipt = `
@@ -71,8 +66,11 @@ Thank you for using VIT FoodHub!
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
           <CheckCircle2 className="h-8 w-8" />
         </div>
+        <div className="inline-block bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full mb-2 uppercase">
+          Payment Successful
+        </div>
         <h1 className="text-2xl font-bold">Order Placed Successfully!</h1>
-        <p className="text-muted-foreground mt-1">Your order has been confirmed. Show your token at pickup.</p>
+        <p className="text-muted-foreground mt-1">Your order has been confirmed. Show your token or QR code at pickup.</p>
       </div>
 
       {/* Token card */}

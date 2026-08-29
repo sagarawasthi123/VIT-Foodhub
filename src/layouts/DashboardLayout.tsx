@@ -82,18 +82,18 @@ export function DashboardLayout() {
   }
 
   const sidebar = (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center gap-2 px-6 py-5 border-b">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+    <div className="flex h-full flex-col w-full min-w-0 overflow-hidden">
+      <div className="flex items-center gap-2 px-6 py-5 border-b shrink-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
           <UtensilsCrossed className="h-5 w-5" />
         </div>
-        <div>
-          <p className="font-bold text-base leading-tight">VIT FoodHub</p>
-          <p className="text-xs text-muted-foreground">{ROLE_LABELS[user.role]}</p>
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-base leading-tight truncate">VIT FoodHub</p>
+          <p className="text-xs text-muted-foreground truncate">{ROLE_LABELS[user.role]}</p>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto min-w-0">
         {navItems.map((item) => {
           const active =
             location.pathname === item.to ||
@@ -104,16 +104,16 @@ export function DashboardLayout() {
               to={item.to}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors min-w-0',
                 active
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
               )}
             >
               {item.icon}
-              <span>{item.label}</span>
+              <span className="truncate">{item.label}</span>
               {item.label === 'Cart' && totalItems > 0 && (
-                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white">
+                <span className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold text-white">
                   {totalItems}
                 </span>
               )}
@@ -122,9 +122,9 @@ export function DashboardLayout() {
         })}
       </nav>
 
-      <div className="border-t p-3">
-        <div className="flex items-center gap-3 px-3 py-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+      <div className="border-t p-3 shrink-0">
+        <div className="flex items-center gap-3 px-3 py-2 min-w-0">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
             {user.name.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
@@ -133,7 +133,7 @@ export function DashboardLayout() {
           </div>
         </div>
         <Button variant="ghost" className="w-full justify-start mt-1 text-muted-foreground" onClick={handleLogout}>
-          <LogOut className="h-4 w-4 mr-2" /> Logout
+          <LogOut className="h-4 w-4 mr-2 shrink-0" /> Logout
         </Button>
       </div>
     </div>
@@ -142,7 +142,7 @@ export function DashboardLayout() {
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 border-r bg-card">
+      <aside className="hidden md:flex fixed inset-y-0 left-0 w-64 border-r bg-card z-30 overflow-hidden">
         {sidebar}
       </aside>
 
@@ -163,7 +163,7 @@ export function DashboardLayout() {
       )}
 
       {/* Main content */}
-      <div className="md:pl-64">
+      <div className="md:pl-64 min-w-0 flex-1">
         {/* Top bar */}
         <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b bg-card/80 backdrop-blur px-4 md:px-6">
           <div className="flex items-center gap-3">
@@ -189,7 +189,7 @@ export function DashboardLayout() {
           </div>
         </header>
 
-        <main className="p-4 md:p-6 max-w-7xl mx-auto">
+        <main className="p-4 md:p-6 max-w-7xl mx-auto w-full min-w-0">
           <Outlet />
         </main>
       </div>

@@ -127,6 +127,30 @@ export async function updatePaymentStatus(
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Atomically redeems (completes) an order via QR scan.
+ * Only succeeds when:
+ *  - order.id matches
+ *  - order.shop_id matches the shopkeeper's assigned shop
+ *  - order.order_status is 'PLACED' (not already completed/cancelled)
+ * Returns null if no row was updated (already redeemed / wrong shop / not found).
+ */
+export async function redeemOrderByQr(
+  orderId: string,
+  shopId: string
+): Promise<Order | null> {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ order_status: 'COMPLETED' })
+    .eq('id', orderId)
+    .eq('shop_id', shopId)
+    .in('order_status', ['PLACED', 'PREPARING', 'READY'])
+    .select('*, order_items(*), shops(name)')
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? mapOrder(data) : null;
+}
+
 export const ORDER_FLOW: OrderStatus[] = [
   'placed',
   'preparing',

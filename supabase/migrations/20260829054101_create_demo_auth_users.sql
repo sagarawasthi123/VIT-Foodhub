@@ -41,6 +41,17 @@ BEGIN
     SELECT id INTO v_admin_id FROM auth.users WHERE email = 'sunita.menon@vit.ac.in';
   END IF;
 
+  -- Ensure app_metadata and identities exist for demo users
+  UPDATE auth.users
+  SET raw_app_meta_data = '{"provider":"email","providers":["email"]}'::jsonb
+  WHERE email IN ('arjun.sharma2023@vitstudent.ac.in', 'ravi.kumar@vit.ac.in', 'sunita.menon@vit.ac.in');
+
+  INSERT INTO auth.identities (id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at, provider_id)
+  SELECT id, id, jsonb_build_object('sub', id::text, 'email', email), 'email', now(), now(), now(), email
+  FROM auth.users
+  WHERE email IN ('arjun.sharma2023@vitstudent.ac.in', 'ravi.kumar@vit.ac.in', 'sunita.menon@vit.ac.in')
+  ON CONFLICT (id, provider) DO NOTHING;
+
   -- Profiles
   INSERT INTO profiles (id, name, email, role, reg_no, status)
   VALUES (v_student_id, 'Arjun Sharma', 'arjun.sharma2023@vitstudent.ac.in', 'student', '23BCE1045', 'active')

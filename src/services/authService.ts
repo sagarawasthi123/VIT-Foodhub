@@ -18,7 +18,9 @@ export async function loginByRole(role: Role): Promise<User> {
   };
   const email = demoEmails[role];
   const { data, error } = await supabase.auth.signInWithPassword({ email, password: 'password' });
-  if (error) throw new Error(`Demo login failed: ${error.message}. Please create the demo accounts first.`);
+  if (error) {
+    throw new Error(`Demo login failed: ${error.message}. Please create the demo accounts first.`);
+  }
 
   const profile = await fetchProfile(data.user.id);
   return profile;
@@ -64,22 +66,23 @@ export async function requestPasswordReset(email: string): Promise<void> {
 }
 
 export async function fetchProfile(userId: string): Promise<User> {
-  const { data, error } = await supabase
+  const res = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error('Profile not found. Please contact support.');
+
+  if (res.error) throw new Error(res.error.message);
+  if (!res.data) throw new Error('Profile not found. Please contact support.');
 
   return {
-    id: data.id,
-    name: data.name,
-    email: data.email,
-    regNo: data.reg_no,
-    role: data.role as Role,
-    status: data.status,
-    createdAt: data.created_at,
+    id: res.data.id,
+    name: res.data.name,
+    email: res.data.email,
+    regNo: res.data.reg_no,
+    role: res.data.role as Role,
+    status: res.data.status,
+    createdAt: res.data.created_at,
   };
 }
 

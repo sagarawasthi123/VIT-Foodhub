@@ -47,11 +47,6 @@ export function AuthLayout() {
             <span className="text-xl font-bold text-primary">VIT FoodHub</span>
           </div>
           <Outlet />
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            <Link to="/login" className="font-medium text-primary hover:underline">
-              Back to login
-            </Link>
-          </p>
         </div>
       </div>
     </div>

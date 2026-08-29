@@ -223,3 +223,42 @@ export async function getAdminStats() {
     ).length,
   };
 }
+
+export async function createShopkeeperAccount(data: {
+  name: string;
+  email: string;
+  password: string;
+  shopId: string;
+}): Promise<{ user: User; shopName: string }> {
+  const { data: resData, error } = await supabase.functions.invoke('create-shopkeeper', {
+    body: {
+      name: data.name,
+      email: data.email,
+      password: data.password,
+      shopId: data.shopId,
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to create shopkeeper account');
+  }
+
+  if (resData?.error) {
+    throw new Error(resData.error);
+  }
+
+  const userId = resData?.user?.id || resData?.userId || resData?.id || '';
+  const shopName = resData?.shopName || resData?.shop_name || 'Assigned Shop';
+
+  return {
+    user: {
+      id: userId,
+      name: resData?.user?.name || data.name,
+      email: resData?.user?.email || data.email,
+      role: 'shopkeeper',
+      status: 'active',
+      createdAt: resData?.user?.createdAt || new Date().toISOString(),
+    },
+    shopName,
+  };
+}

@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Users, GraduationCap, Store, ShieldCheck } from 'lucide-react';
-import { getAllUsers, updateUserRole } from '../../services/adminService';
-import type { User, Role } from '../../types';
+import { Users, GraduationCap, Store, ShieldCheck, UserPlus, Loader2 } from 'lucide-react';
+import { getAllUsers, updateUserRole, getAllShopsAdmin, createShopkeeperAccount } from '../../services/adminService';
+import type { User, Role, Shop } from '../../types';
 import { Card } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { EmptyState } from '../../components/common/EmptyState';
 
 const ROLE_ICONS: Record<Role, React.ReactNode> = {
@@ -14,6 +18,18 @@ const ROLE_ICONS: Record<Role, React.ReactNode> = {
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+
+  const [skForm, setSkForm] = useState({
+    name: '',
+    email: '',
+    password: '',
+    shopId: '',
+  });
 
   useEffect(() => {
     load();
@@ -21,11 +37,37 @@ export function AdminUsersPage() {
 
   function load() {
     getAllUsers().then(setUsers);
+    getAllShopsAdmin().then(setShops);
   }
 
   async function changeRole(userId: string, role: Role) {
     await updateUserRole(userId, role);
     load();
+  }
+
+  async function handleCreateShopkeeper(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+    if (!skForm.shopId) {
+      setFormError('Please select a shop to assign');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const res = await createShopkeeperAccount(skForm);
+      setFormSuccess(`Shopkeeper ${res.user.name} created and assigned to ${res.shopName}!`);
+      setSkForm({ name: '', email: '', password: '', shopId: '' });
+      load();
+      setTimeout(() => {
+        setOpen(false);
+        setFormSuccess('');
+      }, 1500);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'Failed to create shopkeeper account');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   if (users.length === 0) {
@@ -39,9 +81,83 @@ export function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">User Management</h1>
-        <p className="text-muted-foreground mt-1">Manage user roles and permissions</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">User Management</h1>
+          <p className="text-muted-foreground mt-1">Manage user roles and create shopkeeper accounts</p>
+        </div>
+
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2">
+              <UserPlus className="h-4 w-4" /> Create Shopkeeper
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Shopkeeper Account</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateShopkeeper} className="space-y-4 mt-2">
+              <div className="space-y-1.5">
+                <Label htmlFor="sk-name">Full Name</Label>
+                <Input
+                  id="sk-name"
+                  value={skForm.name}
+                  onChange={(e) => setSkForm((p) => ({ ...p, name: e.target.value }))}
+                  placeholder="Ravi Kumar"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sk-email">Email Address</Label>
+                <Input
+                  id="sk-email"
+                  type="email"
+                  value={skForm.email}
+                  onChange={(e) => setSkForm((p) => ({ ...p, email: e.target.value }))}
+                  placeholder="ravi.kumar@vit.ac.in"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="sk-password">Password</Label>
+                <Input
+                  id="sk-password"
+                  type="password"
+                  value={skForm.password}
+                  onChange={(e) => setSkForm((p) => ({ ...p, password: e.target.value }))}
+                  placeholder="Password"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Assign Shop</Label>
+                <Select
+                  value={skForm.shopId}
+                  onValueChange={(val) => setSkForm((p) => ({ ...p, shopId: val }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a shop..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shops.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {formError && <p className="text-sm text-destructive">{formError}</p>}
+              {formSuccess && <p className="text-sm text-green-600 font-medium">{formSuccess}</p>}
+
+              <Button type="submit" className="w-full" disabled={submitting}>
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create & Assign Shopkeeper'}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Summary */}

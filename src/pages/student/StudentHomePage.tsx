@@ -82,18 +82,18 @@ export function StudentHomePage() {
       {/* Active order quick access */}
       {activeOrder && (
         <Link to={`/student/orders/${activeOrder.id}`}>
-          <Card className="p-4 border-primary/30 bg-primary/5 flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Card className="p-4 border-primary/30 bg-primary/5 flex items-center gap-4 hover:shadow-md transition-shadow overflow-hidden">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Clock className="h-6 w-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm">Active Order #{activeOrder.id}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="font-semibold text-sm truncate">Active Order #{activeOrder.id.slice(0, 8)}</p>
+              <p className="text-xs text-muted-foreground truncate">
                 {activeOrder.shopName} · Pickup at {activeOrder.estimatedPickupTime}
               </p>
             </div>
             <StatusBadge status={activeOrder.status} />
-            <ArrowRight className="h-5 w-5 text-muted-foreground" />
+            <ArrowRight className="h-5 w-5 shrink-0 text-muted-foreground" />
           </Card>
         </Link>
       )}

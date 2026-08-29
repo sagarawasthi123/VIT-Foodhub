@@ -6,6 +6,7 @@ import { getOrderById, ORDER_FLOW } from '../../services/orderService';
 import type { Order } from '../../types';
 import { OrderStatusTracker } from '../../components/common/OrderStatusTracker';
 import { StatusBadge } from '../../components/common/Badges';
+import { QRCodeCard } from '../../components/common/QRCodeCard';
 import { Card } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 
@@ -24,6 +25,9 @@ export function OrderTrackingPage() {
 
   if (loading) return <div className="p-4">Loading...</div>;
   if (!order) return <div className="p-4">Order not found.</div>;
+
+  const showQR = order.status !== 'completed';
+  const qrValue = JSON.stringify({ orderId: order.id });
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -69,6 +73,19 @@ export function OrderTrackingPage() {
           <OrderStatusTracker status={order.status} orientation="vertical" />
         </div>
       </Card>
+
+      {/* Pickup QR Code */}
+      {showQR && (
+        <Card className="p-6 text-center">
+          <h2 className="font-semibold mb-1">Pickup QR Code</h2>
+          <p className="text-xs text-muted-foreground mb-4">
+            Show this QR code to the shopkeeper when collecting your order.
+          </p>
+          <div className="flex justify-center">
+            <QRCodeCard value={qrValue} />
+          </div>
+        </Card>
+      )}
 
       {/* Items */}
       <Card className="p-5">
