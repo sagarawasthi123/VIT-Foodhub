@@ -34,6 +34,7 @@ export function AuthLayout() {
             </div>
           </div>
         </div>
+        <p className="text-sm text-green-200">VIT University</p>
       </div>
 
       {/* Right form panel */}
