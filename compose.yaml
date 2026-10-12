@@ -1,11 +1,6 @@
 services:
   foodhub:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
-        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    image: workproject12/vit-foodhub:${IMAGE_TAG:-latest}
     ports:
       - "8080:80"
     restart: unless-stopped
